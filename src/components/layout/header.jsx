@@ -1,68 +1,98 @@
-import { NavLink, Link } from "react-router-dom";
-import "./header.css";
+import { Link, useNavigate } from "react-router-dom";
+import { Menu, message } from "antd";
+import {
+  UsergroupAddOutlined,
+  HomeOutlined,
+  RedditOutlined,
+  LoginOutlined,
+  AliwangwangOutlined,
+} from "@ant-design/icons";
+import { useContext, useState } from "react";
+import { AuthContext } from "../context/auth.context";
+import { logoutApi } from "../../service/api.service";
+
 const Header = () => {
+  const [current, setCurrent] = useState("home");
+  const { user, setUser } = useContext(AuthContext);
+  const navigate = useNavigate();
+  // console.log(">>> check data:", user);
+  const onClick = (e) => {
+    // console.log("click ", e);
+    setCurrent(e.key);
+  };
+  const handleLogout = async () => {
+    const res = await logoutApi();
+    if (res.data) {
+      localStorage.removeItem("access_token");
+      setUser({
+        email: "",
+        phone: "",
+        fullName: "",
+        role: "",
+        avatar: "",
+        id: "",
+      });
+      message.success("logout successful");
+      navigate("/");
+    }
+  };
+  const items = [
+    {
+      label: <Link to={"/"}>Home</Link>,
+      key: "home",
+      icon: <HomeOutlined />,
+    },
+    {
+      label: <Link to={"/users"}>Users</Link>,
+      key: "users",
+      icon: <UsergroupAddOutlined />,
+      // disabled: true,
+    },
+    {
+      label: <Link to={"books"}>Books</Link>,
+      key: "books",
+      icon: <RedditOutlined />,
+    },
+    ...(!user.id
+      ? [
+          {
+            label: <Link to={"/login"}>Login</Link>,
+            key: "login",
+            icon: <LoginOutlined />,
+          },
+        ]
+      : []),
+    ...(user.id
+      ? [
+          {
+            label: `Welcome,${user.fullName}`,
+            key: "setting",
+            icon: <AliwangwangOutlined />,
+            children: [
+              {
+                label: (
+                  <span
+                    onClick={() => {
+                      handleLogout();
+                    }}
+                  >
+                    Logout
+                  </span>
+                ),
+                key: "logout",
+              },
+            ],
+          },
+        ]
+      : []),
+  ];
   return (
-    <>
-      <header>
-        <div className="header-container">
-          <div className="menu">
-            <ul>
-              <li>
-                <NavLink to="/">TRANG CHỦ</NavLink>
-              </li>
-              <li>
-                <NavLink to="/Danhmuc">DANH MỤC</NavLink>
-                <ul className="sub-menu">
-                  <li>
-                    <NavLink to="/abc">Bóng đá</NavLink>
-                    <ul>
-                      <li>Euro</li>
-                      <li>World cup</li>
-                      <li>Champion</li>
-                      <li>Premier league</li>
-                    </ul>
-                  </li>
-                  <li>
-                    <NavLink to="/abc">Quần vợt</NavLink>
-                    <ul>
-                      <li>Châu âu</li>
-                      <li>Châu á</li>
-                      <li>Châu mỹ</li>
-                    </ul>
-                  </li>
-                  <li>
-                    <NavLink to="/abc">Bóng bàn</NavLink>
-                  </li>
-                  <li>
-                    <NavLink to="/abc">Bóng chuyền</NavLink>
-                  </li>
-                  <li>
-                    <NavLink to="/abc">Cầu lông</NavLink>
-                  </li>
-                </ul>
-              </li>
-              <li>
-                <NavLink to="/users">User</NavLink>
-              </li>
-              <li>
-                <NavLink to="/books">Book</NavLink>
-              </li>
-              <li>
-                <NavLink to="/Help">TRỢ GIÚP</NavLink>
-              </li>
-            </ul>
-          </div>
-          <div className="others">
-            <ul>
-              <li className="search">
-                <input type="text" placeholder="Tìm kiếm" />
-                {/* <i className="fa-solid fa-magnifying-glass"></i> */}
-              </li>
-            </ul>
-          </div>
-        </div>
-      </header>
-    </>
+    <Menu
+      onClick={onClick}
+      selectedKeys={[current]}
+      mode="horizontal"
+      items={items}
+    />
   );
 };
 export default Header;
